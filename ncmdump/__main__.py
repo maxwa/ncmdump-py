@@ -52,17 +52,33 @@ if __name__ == "__main__":
             task = progress.add_task("[#d75f00]Dumping files", total=len(files))
 
             for ncm_path in files:
-                output_path = out_folder.joinpath(ncm_path.stem)
 
                 try:
                     ncmfile = NeteaseCloudMusicFile(ncm_path).decrypt()
+                    
+                    # get artists and music name from metadata
+                    music_metadata = ncmfile.metadata.music_metadata
+                    artists = music_metadata.artists
+                    music_name = music_metadata.name
+                    
+                    # Clean potential illegal characters
+                    safe_artist = artists[0].replace('/', '-') if artists else ''
+                    safe_name = music_name.replace('/', '-')
+                    
+                    # Construct new filenames
+                    if safe_artist:
+                        output_filename = f"{safe_artist} - {safe_name}"
+                    else:
+                        output_filename = safe_name
+                    
+                    output_path = out_folder.joinpath(output_filename)
+                    
                     music_path = ncmfile.dump_music(output_path)
 
                     if dump_metadata:
                         ncmfile.dump_metadata(output_path)
                     if dump_cover:
                         ncmfile.dump_cover(output_path)
-
                 except Exception as e:
                     progress.log(f"[red]ERROR[/red]: {ncm_path} -> {traceback.format_exc()}")
 
